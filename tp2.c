@@ -3,7 +3,7 @@
  Computacao Grafica - 2015/16
  ................................................... PMartins/JArrais
  Trabalho 2 - Combate Final (codigo incompleto)
- 
+
  Completar as zonas assinaladas com comentarios TODO
  ======================================================================================= */
 
@@ -48,7 +48,7 @@ GLint  apanhados=0;				    //.. apanhdos pela extremidade
 GLint  embates=0;				    //.. embates na base
 
 //NOTA: Podera' ser necessario incluir outras variaveis globais
-
+GLfloat matrizModelView[3][3];
 
 //-----------------------------------------------------------------------------------
 //  inicializa (definicoes iniciais: cor de fundo/cor para apagar, limites do mundo,
@@ -56,7 +56,7 @@ GLint  embates=0;				    //.. embates na base
 //-----------------------------------------------------------------------------------
 
 void inicializa(void){
-    
+
 	glClearColor (0, 0, 0, 1); //Cor de fundo/cor para limpar o  buffer
 	gluOrtho2D(-wC,wC,-hC,hC); //Define os limites do mundo 2D/planos de recorte verticais e horizontais
 	glShadeModel(GL_SMOOTH); //Define GL_SMOOTH (Gouraud shading) como tipo de shading/interpolacao de cor
@@ -70,9 +70,9 @@ void inicializa(void){
 //-----------------------------------------------------------------------------------
 
 float aleatorio(GLint minimo, GLint maximo){
-	
+
     GLfloat y;
-	
+
     y = rand()%1000;
 	return (minimo+ 0.001*y*(maximo-minimo));
 }
@@ -87,7 +87,7 @@ void desenhaQuadrado(GLfloat x, GLfloat y, GLfloat tam,
 					 GLfloat r, GLfloat g, GLfloat b            )
 {
 	glColor3f(r, g, b);
-	glBegin(GL_QUADS);	                  
+	glBegin(GL_QUADS);
 		glVertex2f(x   , y+tam );
 		glVertex2f(x   , y    );
 		glVertex2f(x+tam, y    );
@@ -101,11 +101,11 @@ void desenhaQuadrado(GLfloat x, GLfloat y, GLfloat tam,
 //              string: texto a escrever
 //              (x,y): onde (comeca a) escrever (coordenadas do mundo))
 //---------------------------------------------------------------------------
-void desenhaTexto(char *string, GLfloat x, GLfloat y) 
-{  
-	glRasterPos2f(x,y); 
+void desenhaTexto(char *string, GLfloat x, GLfloat y)
+{
+	glRasterPos2f(x,y);
 	while (*string)
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *string++); 
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *string++);
 }
 
 
@@ -117,9 +117,7 @@ void desenhaTexto(char *string, GLfloat x, GLfloat y)
 //---------------------------------------------------------------------------
 
 void desenhaBracoArticulado(GLfloat xSup, GLfloat agLig, GLfloat agExt){
-	
 
-	
 	glPushMatrix();
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Suporte vermelho
 		glColor3f(1,0,0);
@@ -134,7 +132,33 @@ void desenhaBracoArticulado(GLfloat xSup, GLfloat agLig, GLfloat agExt){
 		//      - desenhar Extremidade azul
 		//      - determinar a localização da extremidade (Px = ??, Py=??)
 		//        DICA: consultar/usar a matriz modelview (GL_MODELVIEW)
-	
+
+    //Ligacao
+    glColor3f(0,1,0);
+    glRotatef(agLig, 0.0, 0.0, 1.0);
+    //Se não se fizer a translação de mais de metade, ele fica centrado com o mesmo centro
+    // Do quadrado vermelho
+    glTranslatef(0.0, hLig/2, 0.0);
+
+    glPushMatrix();
+      glScalef(wLig, hLig, 1.0);
+      glutSolidCube(1.0);
+    glPopMatrix();
+
+    //Extremidade
+    glColor3f(0,0,1);
+    glTranslatef(0.0, hLig/2, 0.0);
+    glRotatef(agExt , 0.0, 0.0, 1.0);
+
+    glPushMatrix();
+      glScalef(wExt, hExt, 1.0);
+      glutSolidCube(1.0);
+      glTranslatef(hLig, 0.0, 0.0);
+      glRotatef(0.0, 0.0, 0.0, 0.0);
+    glPopMatrix();
+
+    glGetFloatv(GL_MODELVIEW_MATRIX, &matrizModelView[0][0]);
+
 	glPopMatrix();
 }
 
@@ -148,16 +172,16 @@ void desenhaBracoArticulado(GLfloat xSup, GLfloat agLig, GLfloat agExt){
 
 void timer(int value)
 {
-    
+
     //TODO: actualizar a posicao do quadrado que cai
     //NOTAS: - sempre que o quadrado atinge o fundo
     //            -> o numero de tentativas e' incrementado de uma unidade
     //            -> um novo quadrado e' gerado no topo (coordenada x aleatoria)
-	//       - usar incx e incy para actualizar a posicao do quadrado
+	  //       - usar incx e incy para actualizar a posicao do quadrado
     //       - O topo e os limites laterais sao paredes
     //            -> se o quadrado atingir o topo, o incremento em y passa ao simetrico
     //            -> se o quadrado atingir os limites laterais, o incremento em x passa ao simetrico
-    
+
 	glutPostRedisplay();
 	glutTimerFunc(msec,timer, 1);
 }
@@ -181,14 +205,14 @@ void teclasNotAscii(int key, int x, int y)
 	if(key == GLUT_KEY_RIGHT) {
 		xSup= xSup+ incSup;
 		glutPostRedisplay();
-	} 
+	}
 	if(key == GLUT_KEY_DOWN) {
 		agLig= (int) (agLig - incLig) % 360;
-		glutPostRedisplay();	
+		glutPostRedisplay();
 	}
 	if(key == GLUT_KEY_UP) {
 		agLig= (int) (agLig + incLig) % 360;
-		glutPostRedisplay();	
+		glutPostRedisplay();
 	}
 }
 
@@ -199,11 +223,15 @@ void teclasNotAscii(int key, int x, int y)
 //----------------------------------------------------------------------------------------
 
 void teclado (unsigned char key, int x, int y){
-	
+
 	switch (key) {
-	
-	//TODO: Programar as teclas 'q' e 'a' para definir o angulo de rotacao da extremidade
-	
+	  case 'q':
+      agExt -= incExt;
+      break;
+    case 'a':
+      agExt += incExt;
+      break;
+
 	case 27:
 		exit(0);
 		break;
@@ -218,7 +246,7 @@ void teclado (unsigned char key, int x, int y){
 //  desenhaCena (funcao callback de desenho (principal)/desenho da cena)
 //----------------------------------------------------------------------------------------
 void desenhaCena(void){
-    
+
 	int i,j;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~limpa
@@ -229,16 +257,16 @@ void desenhaCena(void){
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Quadrado a cair
 	desenhaQuadrado(qx,qy,tam,1,1,0);
-	
+
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Grelha de pontos
 	glColor3f(1,1,1);
-	glBegin(GL_POINTS);	                  
+	glBegin(GL_POINTS);
 		for (i=-wC;i<wC;i++)
 			for (j=-hC;j<hC;j++)
-				glVertex2f(i,j);		
+				glVertex2f(i,j);
 	glEnd();
 
-	
+
 	//TODO: Deteccao de colisoes
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Regras do jogo :  Apanha / embate
@@ -246,7 +274,7 @@ void desenhaCena(void){
 	//   - embate - o quadrado bate na base
 	//   - o jogo termina quando embates>apanha+3
 
-	
+
 
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Texto/Informacao
@@ -256,14 +284,14 @@ void desenhaCena(void){
 	desenhaTexto(texto, -wC+1, hC-2);
 	sprintf(texto, "Apanhados = %d", apanhados);
 	desenhaTexto(texto, -wC+1, hC-1);
-		
-	
-	
+
+
+
 	glColor3f(1.0,1.0,1.0);
 	char t[]="{pjmm,jpa}@dei.uc.pt";
 	desenhaTexto(t, -wC+0.2, -hC+0.2);
-	
-	
+
+
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Actualiza cena/troca buffers
 	glutSwapBuffers();
 }
@@ -271,7 +299,7 @@ void desenhaCena(void){
 
 
 //---------------------------------------------------------------------------
-//.............................................................. Main 
+//.............................................................. Main
 //---------------------------------------------------------------------------
 int main(int argc, char** argv){
 	glutInit(&argc, argv); //===1:Inicia janela
@@ -279,19 +307,19 @@ int main(int argc, char** argv){
 	glutInitWindowSize (500, 500);  //dimensoes (pixeis)
 	glutInitWindowPosition (300, 100); //localizacao da janela
 	glutCreateWindow ("Combate Final [Teclas: left, right, up, down, q, a]");//criacao da janela
-	
+
 	inicializa (); //===2:Inicia estado/parametros
-    
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //===3:Registo de callbacks
-	
-    glutDisplayFunc(desenhaCena); //desenho
+
+  glutDisplayFunc(desenhaCena); //desenho
 	glutKeyboardFunc(teclado); //eventos de teclado
 	glutSpecialFunc(teclasNotAscii); //eventos de teclado
 	glutTimerFunc(msec, timer, 1); //temporizador
-	
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    glutMainLoop();    //===4:Inicia processamento
+  glutMainLoop();    //===4:Inicia processamento
 
 	return 0;
 }
